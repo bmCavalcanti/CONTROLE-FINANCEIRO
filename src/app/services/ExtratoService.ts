@@ -145,4 +145,44 @@ export class ExtratoService {
             }
         }
     }
+
+    public static async update(id: number, body: any): Promise<ResponseInfo> {
+        try {
+
+            const extratoRepo = Connection.getRepository(Extrato);
+
+            const extrato = await extratoRepo.findOneBy({ id })
+
+            if (!extrato) {
+                return {
+                    status: false,
+                    message: "Transação não encontrada"
+                }
+            }
+
+            extrato.categoria_id = body.categoria_id || extrato.categoria_id
+            extrato.tipo_id = body.tipo_id || extrato.tipo_id
+
+            const save = await extratoRepo.save(extrato)
+
+            if (!save) {
+                return {
+                    status: false,
+                    message: "Transação não atualizada"
+                }
+            }
+
+            return {
+                status: true,
+                message: "Transação atualizada",
+                data: save
+            }
+        } catch (error) {
+            console.error(error)
+            return {
+                status: false,
+                message: "Ocorreu um erro interno ao tentar atualizar a transação"
+            }
+        }
+    }
 }

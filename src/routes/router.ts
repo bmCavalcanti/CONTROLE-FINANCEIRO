@@ -6,8 +6,9 @@ const upload = multer({ dest: "uploads/" });
 
 const router: Router = Router();
 
-router.get("/extrato/import", upload.single("extrato"), ExtratoController.import);
+router.post("/extrato/import", upload.single("extrato"), ExtratoController.import);
 router.get("/extrato/list", ExtratoController.list);
 router.get("/extrato/:id", ExtratoController.get);
+router.put("/extrato/:id", ExtratoController.update);
 
 export { router };

@@ -51,4 +51,18 @@ export class ExtratoController {
             })
         }
     }
+
+    static async update(req: Request, res: Response) {
+        try {
+            const updateItem = await ExtratoService.update(parseInt(req.params.id), req.body);
+            return res.status(updateItem.status ? 200 : 500).json(updateItem);
+
+        } catch (error) {
+            console.error(error)
+            return res.status(500).json({
+                status: false,
+                message: "Ocorreu um erro interno ao tentar atualizar a transação"
+            })
+        }
+    }
 }
