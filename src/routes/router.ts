@@ -12,6 +12,7 @@ const router: Router = Router();
 router.get("/palavra_chave/list", PalavraChaveController.list);
 router.post("/palavra_chave", PalavraChaveController.insert);
 router.put("/palavra_chave/:id", PalavraChaveController.update);
+router.delete("/palavra_chave/:id", PalavraChaveController.delete);
 
 router.get("/extrato_tipo/list", ExtratoTipoController.list);
 router.get("/extrato_categoria/list", ExtratoCategoriaController.list);

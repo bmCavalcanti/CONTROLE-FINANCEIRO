@@ -127,4 +127,41 @@ export class PalavraChaveService {
             }
         }
     }
+
+    public static async delete(id: number): Promise<ResponseInfo> {
+        try {
+
+            const palavraChaveRepo = Connection.getRepository(PalavraChave);
+
+            const palavraChave = await palavraChaveRepo.findOneBy({ id })
+
+            if (!palavraChave) {
+                return {
+                    status: false,
+                    message: "Palavra chave não encontrada"
+                }
+            }
+
+            const deleteItem = await palavraChaveRepo.delete(palavraChave)
+
+            if (!deleteItem) {
+                return {
+                    status: false,
+                    message: "Palavra chave não deletada"
+                }
+            }
+
+            return {
+                status: true,
+                message: "Palavra chave deletada",
+                data: deleteItem
+            }
+        } catch (error) {
+            console.error(error)
+            return {
+                status: false,
+                message: "Ocorreu um erro interno ao tentar deletar a palavra chave"
+            }
+        }
+    }
 }

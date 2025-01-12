@@ -31,6 +31,20 @@ export class PalavraChaveController {
         }
     }
 
+    static async delete(req: Request, res: Response) {
+        try {
+            const deleteItem = await PalavraChaveService.delete(parseInt(req.params.id));
+            return res.status(deleteItem.status ? 200 : 500).json(deleteItem);
+
+        } catch (error) {
+            console.error(error)
+            return res.status(500).json({
+                status: false,
+                message: "Ocorreu um erro interno ao tentar deletar a palavra chave"
+            })
+        }
+    }
+
     static async insert(req: Request, res: Response) {
         try {
             const insertItem = await PalavraChaveService.insert(req.body);
