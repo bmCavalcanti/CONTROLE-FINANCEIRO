@@ -11,8 +11,7 @@ export class ExtratoController {
                 });
             }
 
-            const filePath = req.file.path;
-            const importFile = await ExtratoService.import(filePath)
+            const importFile = await ExtratoService.import(req.file.path)
 
             return res.status(importFile.status ? 200 : 500).json(importFile);
 

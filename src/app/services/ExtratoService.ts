@@ -1,5 +1,5 @@
 import { Extrato } from '../entities/Extrato';
-import fs, { statSync } from "fs";
+import fs from "fs";
 import { Connection } from '../../database/connection';
 import csvParser from "csv-parser";
 import { ResponseInfo } from '../interfaces/ResponseInfo';
