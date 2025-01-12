@@ -3,10 +3,15 @@ import { ExtratoController } from "../app/controllers/ExtratoController";
 import multer from "multer";
 import { ExtratoCategoriaController } from "../app/controllers/ExtratoCategoriaController";
 import { ExtratoTipoController } from "../app/controllers/ExtratoTipoController";
+import { PalavraChaveController } from "../app/controllers/PalavraChaveController";
 
 const upload = multer({ dest: "uploads/" });
 
 const router: Router = Router();
+
+router.get("/palavra_chave/list", PalavraChaveController.list);
+router.post("/palavra_chave", PalavraChaveController.insert);
+router.put("/palavra_chave/:id", PalavraChaveController.update);
 
 router.get("/extrato_tipo/list", ExtratoTipoController.list);
 router.get("/extrato_categoria/list", ExtratoCategoriaController.list);
