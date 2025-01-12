@@ -30,3 +30,16 @@ update extrato_categoria set cor = "#FFD7BA" where id = 5;
 update extrato_categoria set cor = "#D8E2DC" where id = 6;
 update extrato_categoria set cor = "#FEC89A" where id = 7;
 update extrato_categoria set cor = "#FFE5D9" where id = 8;
+
+CREATE TABLE palavra_chave (
+    id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+);
+
+ALTER TABLE palavra_chave
+ADD COLUMN categoria_id INT(11) NOT NULL,
+ADD CONSTRAINT fk_palavra_chave_categoria FOREIGN KEY (categoria_id) REFERENCES extrato_categoria(id);
+
+ALTER TABLE palavra_chave
+ADD COLUMN tipo_id INT(11) NOT NULL,
+ADD CONSTRAINT fk_palavra_chave_tipo FOREIGN KEY (tipo_id) REFERENCES extrato_tipo(id);

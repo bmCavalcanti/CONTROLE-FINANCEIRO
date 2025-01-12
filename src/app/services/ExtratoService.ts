@@ -7,6 +7,7 @@ import { ExtratoTipo } from '../entities/ExtratoTipo';
 import { ExtratoCategoria } from '../entities/ExtratoCategoria';
 import { Between, In, Not } from 'typeorm';
 import moment from 'moment';
+import { PalavraChave } from '../entities/PalavraChave';
 
 export class ExtratoService {
 
@@ -17,6 +18,8 @@ export class ExtratoService {
             const transacoes: Extrato[] = [];
 
             const extratoRepo = Connection.getRepository(Extrato);
+
+            const palavras = await Connection.getRepository(PalavraChave).find();
 
             const statusImportacao: ResponseInfo = await new Promise((resolve, reject) => {
                 fs.createReadStream(filePath)
@@ -49,99 +52,11 @@ export class ExtratoService {
                                     categoria_id = ExtratoCategoria.OUTROS;
                                 }
                             } else {
+                                const palavraChave = palavras.find(palavra => descricao.includes(palavra.nome));
 
-                                if (descricao == "PAGAMENTO DE FATURA") {
-                                    tipo_id = ExtratoTipo.DESPESA_VARIAVEL
-                                    categoria_id = ExtratoCategoria.CARTAO_DE_CREDITO
-
-                                } else if (descricao.includes("ASSAI ATACADISTA")) {
-                                    tipo_id = ExtratoTipo.DESPESA_VARIAVEL
-                                    categoria_id = ExtratoCategoria.ALIMENTACAO
-
-                                } else if (descricao.includes("POSTO-2675")) {
-                                    tipo_id = ExtratoTipo.DESPESA_VARIAVEL
-                                    categoria_id = ExtratoCategoria.CARRO
-
-                                } else if (descricao.includes("STUDIO LEVITTARE")) {
-                                    tipo_id = ExtratoTipo.DESPESA_FIXA
-                                    categoria_id = ExtratoCategoria.AUTOCUIDADO
-
-                                } else if (descricao.includes("EVY BEAUTY")) {
-                                    tipo_id = ExtratoTipo.DESPESA_VARIAVEL
-                                    categoria_id = ExtratoCategoria.AUTOCUIDADO
-
-                                } else if (descricao.includes("VIVO-SP")) {
-                                    tipo_id = ExtratoTipo.DESPESA_FIXA
-                                    categoria_id = ExtratoCategoria.CASA
-
-                                } else if (descricao.includes("ELETROPAULO")) {
-                                    tipo_id = ExtratoTipo.DESPESA_FIXA
-                                    categoria_id = ExtratoCategoria.CASA
-
-                                } else if (descricao.includes("CONDOMINIO PORTAL SANTO ANDRE")) {
-                                    tipo_id = ExtratoTipo.DESPESA_FIXA
-                                    categoria_id = ExtratoCategoria.CASA
-
-                                } else if (descricao.includes("IFOOD")) {
-                                    tipo_id = ExtratoTipo.DESPESA_SUPERFLUA
-                                    categoria_id = ExtratoCategoria.ALIMENTACAO
-
-                                } else if (descricao.includes("FRANCISCO DESIDERIO")) {
-                                    tipo_id = ExtratoTipo.DESPESA_FIXA
-                                    categoria_id = ExtratoCategoria.CARRO
-
-                                } else if (descricao.includes("UNIHOSP")) {
-                                    tipo_id = ExtratoTipo.DESPESA_FIXA
-                                    categoria_id = ExtratoCategoria.SAUDE
-
-                                } else if (descricao.includes("DAIANA KELLY BATISTA NASCIMENTO")) {
-                                    tipo_id = ExtratoTipo.DESPESA_FIXA
-                                    categoria_id = ExtratoCategoria.SAUDE
-
-                                } else if (descricao.includes("EDUARDO FERREIRA NASCIMENTO SANTOS") && item.Valor < -500) {
-                                    tipo_id = ExtratoTipo.DESPESA_FIXA
-                                    categoria_id = ExtratoCategoria.CASA
-
-                                } else if (descricao.includes("CARREFOUR SENADOR")) {
-                                    tipo_id = ExtratoTipo.DESPESA_SUPERFLUA
-                                    categoria_id = ExtratoCategoria.ALIMENTACAO
-
-                                } else if (descricao.includes("DETRAN")) {
-                                    tipo_id = ExtratoTipo.DESPESA_VARIAVEL
-                                    categoria_id = ExtratoCategoria.CARRO
-
-                                } else if (descricao.includes("MERCADOCAR")) {
-                                    tipo_id = ExtratoTipo.DESPESA_VARIAVEL
-                                    categoria_id = ExtratoCategoria.CARRO
-
-                                } else if (descricao.includes("DROGASIL") || descricao.includes("DROGARIA")) {
-                                    tipo_id = ExtratoTipo.DESPESA_VARIAVEL
-                                    categoria_id = ExtratoCategoria.SAUDE
-
-                                } else if (descricao.includes("PERFUMARIA")) {
-                                    tipo_id = ExtratoTipo.DESPESA_SUPERFLUA
-                                    categoria_id = ExtratoCategoria.AUTOCUIDADO
-
-                                } else if (descricao.includes("DÉBITO EM CONTA")) {
-                                    tipo_id = ExtratoTipo.DESPESA_VARIAVEL
-                                    categoria_id = ExtratoCategoria.CASA
-
-                                } else if (descricao.includes("DERMAGE")) {
-                                    tipo_id = ExtratoTipo.DESPESA_VARIAVEL
-                                    categoria_id = ExtratoCategoria.AUTOCUIDADO
-
-                                } else if (descricao.includes("ESSEGRAO")) {
-                                    tipo_id = ExtratoTipo.DESPESA_SUPERFLUA
-                                    categoria_id = ExtratoCategoria.ALIMENTACAO
-
-                                } else if (descricao.includes("XANDAGUA")) {
-                                    tipo_id = ExtratoTipo.DESPESA_VARIAVEL
-                                    categoria_id = ExtratoCategoria.CASA
-
-                                } else if (descricao.includes("HIKATO") || descricao.includes("SUPERMERCADO") || descricao.includes("MERCADO")) {
-                                    tipo_id = ExtratoTipo.DESPESA_VARIAVEL
-                                    categoria_id = ExtratoCategoria.ALIMENTACAO
-
+                                if (palavraChave) {
+                                    tipo_id = palavraChave.tipo_id;
+                                    categoria_id = palavraChave.categoria_id;
                                 }
                             }
 
