@@ -353,8 +353,10 @@ export class ExtratoService {
             const mensal: Record<string, { receitas: number; despesas: number }> = {};
             const gastosSuperfluos: Record<string, number> = {};
 
-            transacoes.forEach((transacao) => {
-                const mesAno = `${transacao.data.getFullYear()}-${transacao.data.getMonth() + 1}`;
+            for (const transacao of transacoes) {
+
+                const mesAno = moment(transacao.data).add(3, "hour").format("YYYY-MM");
+
                 if (!mensal[mesAno]) {
                     mensal[mesAno] = { receitas: 0, despesas: 0 };
                 }
@@ -372,11 +374,10 @@ export class ExtratoService {
                         gastosSuperfluos[categoria] = (gastosSuperfluos[categoria] || 0) + Math.abs(transacao.valor);
                     }
                 }
-            });
+            };
 
             const liquidez = totalReceitas - totalDespesas;
             const pontosOrdenados = Object.entries(gastosSuperfluos).sort((a, b) => b[1] - a[1]);
-            console.log(totalDespesas, totalReceitas, liquidez)
 
             return {
                 status: true,
