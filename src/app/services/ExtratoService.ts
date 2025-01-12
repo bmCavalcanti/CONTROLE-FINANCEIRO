@@ -210,7 +210,7 @@ export class ExtratoService {
 
             const where: any = {};
             if (query.data_inicio && query.data_fim) {
-                where.data = Between(new Date(`${query.data_inicio} 00:00:00`), new Date(`${query.data_fim} 23:59:59`));
+                where.data = Between(moment(`${query.data_inicio} 00:00:00`).utc(true).toDate(), moment(`${query.data_fim} 23:59:59`).utc(true).toDate());
             }
 
             if (query.despesas) {
