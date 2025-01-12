@@ -3,6 +3,8 @@ import fs from "fs";
 import { Connection } from '../../database/connection';
 import csvParser from "csv-parser";
 import { ResponseInfo } from '../interfaces/ResponseInfo';
+import { ExtratoTipo } from '../entities/ExtratoTipo';
+import { ExtratoCategoria } from '../entities/ExtratoCategoria';
 
 export class ExtratoService {
 
@@ -34,6 +36,8 @@ export class ExtratoService {
                                 valor: parseFloat(item.Valor),
                                 id_externo: item.Identificador,
                                 descricao: item.Descrição,
+                                tipo_id: item.Valor > 0 ? ExtratoTipo.RECEITA : undefined,
+                                categoria_id: item.Valor > 1000 ? ExtratoCategoria.SALARIO : item.Valor > 0 ? ExtratoCategoria.OUTROS : undefined,
                             });
 
                             transacoes.push(transacao);
@@ -83,6 +87,61 @@ export class ExtratoService {
             return {
                 status: false,
                 message: "Erro interno ao tentar realizar a importação"
+            }
+        }
+    }
+
+    public static async list(): Promise<ResponseInfo> {
+        try {
+            const transacoes = await Connection.getRepository(Extrato).find({
+                relations: ["tipo", "categoria"]
+            })
+
+            if (!transacoes) {
+                return {
+                    status: false,
+                    message: "Nenhuma transação foi encontrada"
+                }
+            }
+
+            return {
+                status: true,
+                message: "Transações encontradas",
+                data: transacoes
+            }
+        } catch (error) {
+            console.error(error)
+            return {
+                status: false,
+                message: "Ocorreu um erro interno ao tentar buscar as transações"
+            }
+        }
+    }
+
+    public static async get(id: number): Promise<ResponseInfo> {
+        try {
+            const extrato = await Connection.getRepository(Extrato).findOne({
+                where: { id },
+                relations: ["tipo", "categoria"]
+            })
+
+            if (!extrato) {
+                return {
+                    status: false,
+                    message: "Transação não encontrada"
+                }
+            }
+
+            return {
+                status: true,
+                message: "Transação encontrada",
+                data: extrato
+            }
+        } catch (error) {
+            console.error(error)
+            return {
+                status: false,
+                message: "Ocorreu um erro interno ao tentar buscar a transação"
             }
         }
     }
