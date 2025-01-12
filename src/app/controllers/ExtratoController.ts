@@ -26,7 +26,7 @@ export class ExtratoController {
 
     static async list(req: Request, res: Response) {
         try {
-            const list = await ExtratoService.list();
+            const list = await ExtratoService.list(req.query);
             return res.status(list.status ? 200 : 500).json(list);
 
         } catch (error) {

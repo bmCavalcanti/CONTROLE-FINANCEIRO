@@ -5,6 +5,7 @@ import csvParser from "csv-parser";
 import { ResponseInfo } from '../interfaces/ResponseInfo';
 import { ExtratoTipo } from '../entities/ExtratoTipo';
 import { ExtratoCategoria } from '../entities/ExtratoCategoria';
+import { Between, In } from 'typeorm';
 
 export class ExtratoService {
 
@@ -91,9 +92,35 @@ export class ExtratoService {
         }
     }
 
-    public static async list(): Promise<ResponseInfo> {
+    public static async list(query?: any): Promise<ResponseInfo> {
         try {
+
+            let where = {}
+
+            if (query) {
+                if (query.data_inicio && query.data_fim) {
+                    where = {
+                        data: Between(new Date(`${query.data_inicio} 00:00:00`), new Date(`${query.data_fim} 23:59:59`))
+                    }
+                }
+
+                if (query.categorias) {
+                    where = {
+                        ...where,
+                        categoria_id: In(query.categorias)
+                    }
+                }
+
+                if (query.tipos) {
+                    where = {
+                        ...where,
+                        tipo_id: In(query.tipos)
+                    }
+                }
+            }
+
             const transacoes = await Connection.getRepository(Extrato).find({
+                where,
                 relations: ["tipo", "categoria"]
             })
 
