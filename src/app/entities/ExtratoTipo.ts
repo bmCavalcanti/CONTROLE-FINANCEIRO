@@ -15,6 +15,9 @@ export class ExtratoTipo {
     @Column({ type: "varchar", length: 100 })
     nome: string;
 
+    @Column({ type: "varchar", length: 10 })
+    cor: string;
+
     @OneToMany(() => Extrato, (extrato) => extrato.tipo)
     extratos: Extrato[];
 }

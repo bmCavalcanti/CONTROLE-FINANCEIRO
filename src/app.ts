@@ -1,12 +1,14 @@
 import express from "express";
 import { initializeDatabase } from "./database/connection";
 import { router } from "./routes/router";
+const cors = require('cors');
 
 export class App {
     public server: express.Application;
 
     constructor() {
         this.server = express();
+        this.server.use(cors());
         this.middleware();
         this.router();
     }

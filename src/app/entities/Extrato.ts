@@ -7,7 +7,7 @@ export class Extrato {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column({ type: "date" })
+    @Column({ type: "datetime" })
     data: Date;
 
     @Column({ type: "varchar", length: 50 })
