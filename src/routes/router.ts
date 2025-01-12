@@ -12,6 +12,7 @@ router.get("/extrato_tipo/list", ExtratoTipoController.list);
 router.get("/extrato_categoria/list", ExtratoCategoriaController.list);
 
 router.get("/extrato/analyse-by-period", ExtratoController.analyzeByPeriod);
+router.get("/extrato/forecast-financial-health", ExtratoController.forecastFinancialHealth);
 
 router.post("/extrato/import", upload.single("extrato"), ExtratoController.import);
 router.get("/extrato/list", ExtratoController.list);

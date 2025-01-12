@@ -31,7 +31,7 @@ export class Extrato {
     tipo_id?: number;
 
     @Column({ type: "int" })
-    categoria_id?: number;
+    categoria_id: number;
 
     @ManyToOne(() => ExtratoCategoria, (extratoCategoria) => extratoCategoria.extratos)
     @JoinColumn({ name: "categoria_id" })

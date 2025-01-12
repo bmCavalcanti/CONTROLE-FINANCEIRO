@@ -368,7 +368,7 @@ export class ExtratoService {
                     totalDespesas += Math.abs(transacao.valor);
                     mensal[mesAno].despesas += Math.abs(transacao.valor);
 
-                    if (transacao.tipo_id === ExtratoTipo.DESPESA_SUPERFLUA && transacao.categoria_id) {
+                    if (transacao.tipo_id === ExtratoTipo.DESPESA_SUPERFLUA) {
                         totalDespesaSuperflua +=  Math.abs(transacao.valor);
                         const categoria = transacao.categoria.nome;
                         gastosSuperfluos[categoria] = (gastosSuperfluos[categoria] || 0) + Math.abs(transacao.valor);
@@ -398,4 +398,90 @@ export class ExtratoService {
         }
     }
 
+    public static async forecastFinancialHealth(query?: any): Promise<ResponseInfo> {
+        try {
+            const where: any = {};
+
+            if (query.data_inicio && query.data_fim) {
+                where.data = Between(
+                    moment(`${query.data_inicio} 00:00:00`).utc(true).toDate(),
+                    moment(`${query.data_fim} 23:59:59`).utc(true).toDate()
+                );
+            }
+
+            const transacoes = await Connection.getRepository(Extrato).find({
+                where,
+                relations: ["tipo", "categoria"],
+                order: {
+                    data: "DESC"
+                }
+            });
+
+            if (!transacoes || transacoes.length === 0) {
+                return {
+                    status: false,
+                    message: "Nenhuma transação encontrada para o período selecionado.",
+                };
+            }
+
+            let totalReceitas = 0;
+            let totalDespesas = 0;
+            let totalDespesaFixa = 0;
+            let totalDespesaVariavel = 0;
+            const mensal: Record<string, { receitas: number; despesas: number }> = {};
+            const gastosSuperfluos: Record<string, number> = {};
+
+            for (const transacao of transacoes) {
+                const mesAno = moment(transacao.data).add(3, "hour").format("YYYY-MM");
+
+                if (!mensal[mesAno]) {
+                    mensal[mesAno] = { receitas: 0, despesas: 0 };
+                }
+
+                if (transacao.tipo_id === ExtratoTipo.RECEITA) {
+                    totalReceitas += transacao.valor;
+                    mensal[mesAno].receitas += transacao.valor;
+                } else {
+                    totalDespesas += Math.abs(transacao.valor);
+                    mensal[mesAno].despesas += Math.abs(transacao.valor);
+
+                    if (transacao.tipo_id === ExtratoTipo.DESPESA_FIXA) {
+                        totalDespesaFixa += Math.abs(transacao.valor);
+                    } else if (transacao.tipo_id === ExtratoTipo.DESPESA_VARIAVEL) {
+                        totalDespesaVariavel += Math.abs(transacao.valor);
+                    }
+
+                    if (transacao.tipo_id === ExtratoTipo.DESPESA_SUPERFLUA) {
+                        const categoria = transacao.categoria.nome;
+                        gastosSuperfluos[categoria] = (gastosSuperfluos[categoria] || 0) + Math.abs(transacao.valor);
+                    }
+                }
+            }
+
+            const mesesFuturos = 3;
+            const saldoAtual = totalReceitas - totalDespesas;
+            const saldoFuturoEstimado = saldoAtual + (totalReceitas - totalDespesaFixa - totalDespesaVariavel) * mesesFuturos;
+
+            const gastosSuperfluosOrdenados = Object.entries(gastosSuperfluos).sort((a, b) => b[1] - a[1]);
+
+            return {
+                status: true,
+                message: "Previsão de saúde financeira pros próximos 3 meses calculada com sucesso.",
+                data: {
+                    saldoAtual,
+                    saldoFuturoEstimado,
+                    gastosSuperfluos: gastosSuperfluosOrdenados,
+                    totalDespesaFixa,
+                    totalDespesaVariavel,
+                    totalDespesaSuperflua: Object.values(gastosSuperfluos).reduce((acc, curr) => acc + curr, 0)
+                },
+            };
+        } catch (error) {
+            console.error(error);
+            return {
+                status: false,
+                message: "Erro ao realizar a previsão da saúde financeira",
+            };
+        }
+    }
 }
