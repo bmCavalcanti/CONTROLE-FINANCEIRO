@@ -5,7 +5,8 @@ import csvParser from "csv-parser";
 import { ResponseInfo } from '../interfaces/ResponseInfo';
 import { ExtratoTipo } from '../entities/ExtratoTipo';
 import { ExtratoCategoria } from '../entities/ExtratoCategoria';
-import { Between, In } from 'typeorm';
+import { Between, In, Not } from 'typeorm';
+import moment from 'moment';
 
 export class ExtratoService {
 
@@ -32,7 +33,7 @@ export class ExtratoService {
                             const [day, month, year] = item.Data.split('/');
 
                             console.log(`${year}-${month}-${day}`);
-                            const date = new Date(`${year}-${month}-${day}`);
+                            const date = moment(`${year}-${month}-${day}`).utc(true).toDate();
 
                             let categoria_id = ExtratoCategoria.OUTROS;
                             let tipo_id = undefined;
@@ -212,6 +213,11 @@ export class ExtratoService {
                 where.data = Between(new Date(`${query.data_inicio} 00:00:00`), new Date(`${query.data_fim} 23:59:59`));
             }
 
+            if (query.despesas) {
+                where.tipo_id = Not(ExtratoTipo.RECEITA);
+                where.categoria_id = Not(ExtratoCategoria.SALARIO);
+            }
+
             if (query.categorias) {
                 where.categoria_id = In(query.categorias);
             }
@@ -316,4 +322,79 @@ export class ExtratoService {
             }
         }
     }
+
+    public static async analyzeByPeriod(query?: any): Promise<ResponseInfo> {
+        try {
+
+            const where: any = {};
+
+            if (query.data_inicio && query.data_fim) {
+                where.data = Between(moment(`${query.data_inicio} 00:00:00`).utc(true).toDate(), moment(`${query.data_fim} 23:59:59`).utc(true).toDate());
+            }
+
+            const transacoes = await Connection.getRepository(Extrato).find({
+                where,
+                relations: ["tipo", "categoria"],
+                order: {
+                    data: "DESC"
+                }
+            })
+
+            if (!transacoes || transacoes.length === 0) {
+                return {
+                    status: false,
+                    message: "Nenhuma transação encontrada para o período selecionado.",
+                };
+            }
+
+            let totalReceitas = 0;
+            let totalDespesas = 0;
+            let totalDespesaSuperflua = 0;
+            const mensal: Record<string, { receitas: number; despesas: number }> = {};
+            const gastosSuperfluos: Record<string, number> = {};
+
+            transacoes.forEach((transacao) => {
+                const mesAno = `${transacao.data.getFullYear()}-${transacao.data.getMonth() + 1}`;
+                if (!mensal[mesAno]) {
+                    mensal[mesAno] = { receitas: 0, despesas: 0 };
+                }
+
+                if (transacao.tipo_id === ExtratoTipo.RECEITA) {
+                    totalReceitas += transacao.valor;
+                    mensal[mesAno].receitas += transacao.valor;
+                } else {
+                    totalDespesas += Math.abs(transacao.valor);
+                    mensal[mesAno].despesas += Math.abs(transacao.valor);
+
+                    if (transacao.tipo_id === ExtratoTipo.DESPESA_SUPERFLUA && transacao.categoria_id) {
+                        totalDespesaSuperflua +=  Math.abs(transacao.valor);
+                        const categoria = transacao.categoria.nome;
+                        gastosSuperfluos[categoria] = (gastosSuperfluos[categoria] || 0) + Math.abs(transacao.valor);
+                    }
+                }
+            });
+
+            const liquidez = totalReceitas - totalDespesas;
+            const pontosOrdenados = Object.entries(gastosSuperfluos).sort((a, b) => b[1] - a[1]);
+            console.log(totalDespesas, totalReceitas, liquidez)
+
+            return {
+                status: true,
+                message: "Análise concluída",
+                data: {
+                    liquidez,
+                    evolucao: mensal,
+                    gastosSuperfluos: pontosOrdenados,
+                    totalDespesaSuperflua
+                },
+            };
+        } catch (error) {
+            console.error(error);
+            return {
+                status: false,
+                message: "Erro ao realizar a análise",
+            };
+        }
+    }
+
 }

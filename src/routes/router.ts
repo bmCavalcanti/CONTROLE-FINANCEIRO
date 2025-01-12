@@ -11,6 +11,8 @@ const router: Router = Router();
 router.get("/extrato_tipo/list", ExtratoTipoController.list);
 router.get("/extrato_categoria/list", ExtratoCategoriaController.list);
 
+router.get("/extrato/analyse-by-period", ExtratoController.analyzeByPeriod);
+
 router.post("/extrato/import", upload.single("extrato"), ExtratoController.import);
 router.get("/extrato/list", ExtratoController.list);
 router.get("/extrato/:id", ExtratoController.get);
