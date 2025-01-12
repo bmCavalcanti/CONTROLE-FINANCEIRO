@@ -343,7 +343,7 @@ export class ExtratoService {
             if (!transacoes || transacoes.length === 0) {
                 return {
                     status: false,
-                    message: "Nenhuma transação encontrada para o período selecionado.",
+                    message: "Nenhuma transação encontrada para o período selecionado",
                 };
             }
 
@@ -420,7 +420,7 @@ export class ExtratoService {
             if (!transacoes || transacoes.length === 0) {
                 return {
                     status: false,
-                    message: "Nenhuma transação encontrada para o período selecionado.",
+                    message: "Nenhuma transação encontrada para o período selecionado",
                 };
             }
 
@@ -449,9 +449,7 @@ export class ExtratoService {
                         totalDespesaFixa += Math.abs(transacao.valor);
                     } else if (transacao.tipo_id === ExtratoTipo.DESPESA_VARIAVEL) {
                         totalDespesaVariavel += Math.abs(transacao.valor);
-                    }
-
-                    if (transacao.tipo_id === ExtratoTipo.DESPESA_SUPERFLUA) {
+                    } else if (transacao.tipo_id === ExtratoTipo.DESPESA_SUPERFLUA) {
                         const categoria = transacao.categoria.nome;
                         gastosSuperfluos[categoria] = (gastosSuperfluos[categoria] || 0) + Math.abs(transacao.valor);
                     }
@@ -466,7 +464,7 @@ export class ExtratoService {
 
             return {
                 status: true,
-                message: "Previsão de saúde financeira pros próximos 3 meses calculada com sucesso.",
+                message: "Previsão de saúde financeira pros próximos 3 meses calculada com sucesso",
                 data: {
                     saldoAtual,
                     saldoFuturoEstimado,
