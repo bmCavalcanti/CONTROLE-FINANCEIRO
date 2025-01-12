@@ -234,7 +234,7 @@ export class ExtratoService {
                 }
             })
 
-            if (!transacoes) {
+            if (!transacoes || transacoes.length === 0) {
                 return {
                     status: false,
                     message: "Nenhuma transação foi encontrada"
