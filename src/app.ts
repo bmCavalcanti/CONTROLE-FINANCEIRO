@@ -17,8 +17,8 @@ export class App {
         try {
             await initializeDatabase;
 
-            this.server.listen(3000, () => {
-                console.log(`🔥🔥 Servidor rodando na porta 3000 🔥🔥`);
+            this.server.listen(3100, () => {
+                console.log(`🔥🔥 Servidor rodando na porta 3100 🔥🔥`);
             });
         } catch (error) {
             console.error("Erro ao conectar com o banco de dados:", error);
