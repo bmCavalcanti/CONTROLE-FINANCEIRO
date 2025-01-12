@@ -95,28 +95,17 @@ export class ExtratoService {
     public static async list(query?: any): Promise<ResponseInfo> {
         try {
 
-            let where = {}
+            const where: any = {};
+            if (query.data_inicio && query.data_fim) {
+                where.data = Between(new Date(`${query.data_inicio} 00:00:00`), new Date(`${query.data_fim} 23:59:59`));
+            }
 
-            if (query) {
-                if (query.data_inicio && query.data_fim) {
-                    where = {
-                        data: Between(new Date(`${query.data_inicio} 00:00:00`), new Date(`${query.data_fim} 23:59:59`))
-                    }
-                }
+            if (query.categorias) {
+                where.categoria_id = In(query.categorias);
+            }
 
-                if (query.categorias) {
-                    where = {
-                        ...where,
-                        categoria_id: In(query.categorias)
-                    }
-                }
-
-                if (query.tipos) {
-                    where = {
-                        ...where,
-                        tipo_id: In(query.tipos)
-                    }
-                }
+            if (query.tipos) {
+                where.tipo_id = In(query.tipos);
             }
 
             const transacoes = await Connection.getRepository(Extrato).find({
