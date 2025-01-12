@@ -16,23 +16,29 @@ export class ExtratoService {
             const statusImportacao: ResponseInfo = await new Promise((resolve, reject) => {
                 fs.createReadStream(filePath)
                 .pipe(csvParser())
-                .on("data", async (row) => {
-                    const validate = await extratoRepo.findOneBy({id_externo: row.Identificador})
+                .on("data",  (row) => {
+                    // const validate = await extratoRepo.findOneBy({ id_externo: row.Identificador })
+                    // if (!validate) {
 
-                    if (!validate) {
+                        const dateString = row.Data;
+                        const [day, month, year] = dateString.split('/');
+                        const date = new Date(`${year}-${month}-${day}`);
+                        console.log(date);
                         const transacao = extratoRepo.create({
-                            data: new Date(row.Data),
+                            data: date,
                             valor: parseFloat(row.Valor),
                             id_externo: row.Identificador,
                             descricao: row.Descrição,
                         });
+                        console.log(transacao)
 
                         transacoes.push(transacao);
-                    }
+                    // }
                 })
                 .on("end", async () => {
                     const extratos = await extratoRepo.save(transacoes);
 
+                    console.log(transacoes)
                     if (transacoes.length === 0) {
                         return resolve({
                             status: false,
