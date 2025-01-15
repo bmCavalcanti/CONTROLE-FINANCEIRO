@@ -35,7 +35,6 @@ export class ExtratoService {
                         if (!validate) {
                             const [day, month, year] = item.Data.split('/');
 
-                            console.log(`${year}-${month}-${day}`);
                             const date = moment(`${year}-${month}-${day}`).utc(true).toDate();
 
                             let categoria_id = ExtratoCategoria.OUTROS;
@@ -240,22 +239,36 @@ export class ExtratoService {
 
     public static async analyzeByPeriod(query?: any): Promise<ResponseInfo> {
         try {
+            const { data_inicio, data_fim } = query || {};
 
-            const where: any = {};
-
-            if (query.data_inicio && query.data_fim) {
-                where.data = Between(moment(`${query.data_inicio} 00:00:00`).utc(true).toDate(), moment(`${query.data_fim} 23:59:59`).utc(true).toDate());
+            if (!data_inicio || !data_fim) {
+                return {
+                    status: false,
+                    message: "Os parâmetros data_inicio e data_fim são obrigatórios",
+                };
             }
+
+            if (moment(data_inicio).isAfter(moment(data_fim))) {
+                return {
+                    status: false,
+                    message: "A data de início não pode ser maior que a data de fim",
+                };
+            }
+
+            const where: any = {
+                data: Between(
+                    moment(`${data_inicio} 00:00:00`).utc(true).toDate(),
+                    moment(`${data_fim} 23:59:59`).utc(true).toDate()
+                ),
+            };
 
             const transacoes = await Connection.getRepository(Extrato).find({
                 where,
                 relations: ["tipo", "categoria"],
-                order: {
-                    data: "DESC"
-                }
-            })
+                order: { data: "DESC" },
+            });
 
-            if (!transacoes || transacoes.length === 0) {
+            if (!transacoes.length) {
                 return {
                     status: false,
                     message: "Nenhuma transação encontrada para o período selecionado",
@@ -276,39 +289,45 @@ export class ExtratoService {
                     mensal[mesAno] = { receitas: 0, despesas: 0 };
                 }
 
+                const valorAbsoluto = Math.abs(transacao.valor);
+
                 if (transacao.tipo_id === ExtratoTipo.RECEITA) {
                     totalReceitas += transacao.valor;
                     mensal[mesAno].receitas += transacao.valor;
                 } else {
-                    totalDespesas += Math.abs(transacao.valor);
-                    mensal[mesAno].despesas += Math.abs(transacao.valor);
+                    totalDespesas += valorAbsoluto;
+                    mensal[mesAno].despesas += valorAbsoluto;
 
                     if (transacao.tipo_id === ExtratoTipo.DESPESA_SUPERFLUA) {
-                        totalDespesaSuperflua +=  Math.abs(transacao.valor);
+                        totalDespesaSuperflua += valorAbsoluto;
                         const categoria = transacao.categoria.nome;
-                        gastosSuperfluos[categoria] = (gastosSuperfluos[categoria] || 0) + Math.abs(transacao.valor);
+                        gastosSuperfluos[categoria] = (gastosSuperfluos[categoria] || 0) + valorAbsoluto;
                     }
                 }
-            };
+            }
 
-            const liquidez = totalReceitas - totalDespesas;
-            const pontosOrdenados = Object.entries(gastosSuperfluos).sort((a, b) => b[1] - a[1]);
+            const mesesNoPeriodo = moment(data_fim).diff(moment(data_inicio), "months") + 1;
+            const mediaDespesaSuperflua = totalDespesaSuperflua / mesesNoPeriodo;
+            const gastosSuperfluosMedia = Object.entries(gastosSuperfluos).reduce((acc, [categoria, valor]) => {
+                acc[categoria] = valor / mesesNoPeriodo;
+                return acc;
+            }, {} as Record<string, number>);
 
             return {
                 status: true,
                 message: "Análise concluída",
                 data: {
-                    liquidez,
+                    liquidez: totalReceitas - totalDespesas,
                     evolucao: mensal,
-                    gastosSuperfluos: pontosOrdenados,
-                    totalDespesaSuperflua
+                    gastosSuperfluos: Object.entries(gastosSuperfluosMedia).sort((a, b) => b[1] - a[1]),
+                    totalDespesaSuperflua: mediaDespesaSuperflua,
                 },
             };
         } catch (error) {
-            console.error(error);
+            console.error("Erro ao realizar a análise:", error);
             return {
                 status: false,
-                message: "Erro ao realizar a análise",
+                message: "Erro ao realizar a análise. Por favor, tente novamente.",
             };
         }
     }
@@ -327,9 +346,7 @@ export class ExtratoService {
             const transacoes = await Connection.getRepository(Extrato).find({
                 where,
                 relations: ["tipo", "categoria"],
-                order: {
-                    data: "DESC"
-                }
+                order: { data: "DESC" },
             });
 
             if (!transacoes || transacoes.length === 0) {
@@ -343,50 +360,62 @@ export class ExtratoService {
             let totalDespesas = 0;
             let totalDespesaFixa = 0;
             let totalDespesaVariavel = 0;
+            let totalDespesaSuperflua = 0;
             const mensal: Record<string, { receitas: number; despesas: number }> = {};
             const gastosSuperfluos: Record<string, number> = {};
 
             for (const transacao of transacoes) {
-                const mesAno = moment(transacao.data).add(3, "hour").format("YYYY-MM");
+                const mesAno = moment(transacao.data).format("YYYY-MM");
 
                 if (!mensal[mesAno]) {
                     mensal[mesAno] = { receitas: 0, despesas: 0 };
                 }
 
+                const valorAbsoluto = Math.abs(transacao.valor);
+
                 if (transacao.tipo_id === ExtratoTipo.RECEITA) {
                     totalReceitas += transacao.valor;
                     mensal[mesAno].receitas += transacao.valor;
                 } else {
-                    totalDespesas += Math.abs(transacao.valor);
-                    mensal[mesAno].despesas += Math.abs(transacao.valor);
+                    totalDespesas += valorAbsoluto;
+                    mensal[mesAno].despesas += valorAbsoluto;
 
                     if (transacao.tipo_id === ExtratoTipo.DESPESA_FIXA) {
-                        totalDespesaFixa += Math.abs(transacao.valor);
+                        totalDespesaFixa += valorAbsoluto;
                     } else if (transacao.tipo_id === ExtratoTipo.DESPESA_VARIAVEL) {
-                        totalDespesaVariavel += Math.abs(transacao.valor);
+                        totalDespesaVariavel += valorAbsoluto;
                     } else if (transacao.tipo_id === ExtratoTipo.DESPESA_SUPERFLUA) {
+                        totalDespesaSuperflua += valorAbsoluto;
                         const categoria = transacao.categoria.nome;
-                        gastosSuperfluos[categoria] = (gastosSuperfluos[categoria] || 0) + Math.abs(transacao.valor);
+                        gastosSuperfluos[categoria] = (gastosSuperfluos[categoria] || 0) + valorAbsoluto;
                     }
                 }
             }
 
+            const mesesNoPeriodo = Object.keys(mensal).length;
+            const mediaReceitas = totalReceitas / mesesNoPeriodo;
+            const mediaDespesas = totalDespesas / mesesNoPeriodo;
+            const mediaDespesaFixa = totalDespesaFixa / mesesNoPeriodo;
+            const mediaDespesaVariavel = totalDespesaVariavel / mesesNoPeriodo;
+            const mediaDespesaSuperflua = totalDespesaSuperflua / mesesNoPeriodo;
+
             const mesesFuturos = 3;
             const saldoAtual = totalReceitas - totalDespesas;
-            const saldoFuturoEstimado = saldoAtual + (totalReceitas - totalDespesaFixa - totalDespesaVariavel) * mesesFuturos;
 
-            const gastosSuperfluosOrdenados = Object.entries(gastosSuperfluos).sort((a, b) => b[1] - a[1]);
+            const saldoFuturoEstimado = saldoAtual + ((mediaReceitas - mediaDespesaFixa - mediaDespesaVariavel) * mesesFuturos);
 
             return {
                 status: true,
-                message: "Previsão de saúde financeira pros próximos 3 meses calculada com sucesso",
+                message: "Previsão de saúde financeira para os próximos 3 meses calculada com sucesso",
                 data: {
                     saldoAtual,
                     saldoFuturoEstimado,
-                    gastosSuperfluos: gastosSuperfluosOrdenados,
-                    totalDespesaFixa,
-                    totalDespesaVariavel,
-                    totalDespesaSuperflua: Object.values(gastosSuperfluos).reduce((acc, curr) => acc + curr, 0)
+                    gastosSuperfluos: Object.entries(gastosSuperfluos).sort((a, b) => b[1] - a[1]),
+                    mediaDespesaFixa,
+                    mediaDespesaVariavel,
+                    mediaDespesaSuperflua,
+                    mediaDespesas,
+                    previstoPara: moment().add(mesesFuturos, "month").format("MM/YYYY")
                 },
             };
         } catch (error) {
@@ -397,4 +426,5 @@ export class ExtratoService {
             };
         }
     }
+
 }
