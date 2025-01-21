@@ -278,7 +278,7 @@ export class ExtratoService {
             let totalReceitas = 0;
             let totalDespesas = 0;
             let totalDespesaSuperflua = 0;
-            const mensal: Record<string, { receitas: number; despesas: number }> = {};
+            const mensal: Record<string, { receitas: number; despesas: number; saldo: number }> = {};
             const gastosSuperfluos: Record<string, number> = {};
 
             for (const transacao of transacoes) {
@@ -286,7 +286,7 @@ export class ExtratoService {
                 const mesAno = moment(transacao.data).add(3, "hour").format("YYYY-MM");
 
                 if (!mensal[mesAno]) {
-                    mensal[mesAno] = { receitas: 0, despesas: 0 };
+                    mensal[mesAno] = { receitas: 0, despesas: 0, saldo: 0 };
                 }
 
                 const valorAbsoluto = Math.abs(transacao.valor);
@@ -304,6 +304,8 @@ export class ExtratoService {
                         gastosSuperfluos[categoria] = (gastosSuperfluos[categoria] || 0) + valorAbsoluto;
                     }
                 }
+
+                mensal[mesAno].saldo = (mensal[mesAno].receitas - mensal[mesAno].despesas);
             }
 
             const mesesNoPeriodo = moment(data_fim).diff(moment(data_inicio), "months") + 1;
@@ -398,11 +400,12 @@ export class ExtratoService {
             const mediaDespesaFixa = totalDespesaFixa / mesesNoPeriodo;
             const mediaDespesaVariavel = totalDespesaVariavel / mesesNoPeriodo;
             const mediaDespesaSuperflua = totalDespesaSuperflua / mesesNoPeriodo;
+            const mediaSaldo = mediaReceitas - mediaDespesas;
 
-            const mesesFuturos = 3;
+            const mesesFuturos = 12;
             const saldoAtual = totalReceitas - totalDespesas;
 
-            const saldoFuturoEstimado = saldoAtual + ((mediaReceitas - mediaDespesaFixa - mediaDespesaVariavel) * mesesFuturos);
+            const saldoFuturoEstimado = saldoAtual + (mediaSaldo * mesesFuturos);
 
             return {
                 status: true,
@@ -415,6 +418,8 @@ export class ExtratoService {
                     mediaDespesaVariavel,
                     mediaDespesaSuperflua,
                     mediaDespesas,
+                    mediaReceitas,
+                    mediaSaldo,
                     previstoPara: moment().add(mesesFuturos, "month").format("MM/YYYY")
                 },
             };
