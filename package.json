@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc",
     "start": "nodemon dist/server.js",
-    "dev:app": "ts-node-dev --respawn --transpile-only --ignore node_modules src/index.ts"
+    "dev": "ts-node-dev --respawn --transpile-only --ignore node_modules src/index.ts"
   },
   "keywords": [],
   "author": "Bianca Cavalcanti",
@@ -37,7 +37,7 @@
     "csv-parser": "^3.1.0",
     "date-fns": "^3.6.0",
     "decimal.js": "^10.4.3",
-    "dotenv": "^16.4.5",
+    "dotenv": "^16.6.1",
     "es6-shim": "^0.35.8",
     "express": "^4.21.2",
     "express-fileupload": "^1.5.0",
